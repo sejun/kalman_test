@@ -24,7 +24,7 @@ public class CustomRenderer implements Renderer {
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
         gl.glLoadIdentity();
         gl.glTranslatef(-mCube.getAccX(), -mCube.getAccY(), -30.0f);
-        Log.i("kalman", "x = " + mCube.getAccX() + ", y = " + mCube.getAccY() + ",z = " + mCube.getAccZ());
+        //Log.i("kalman", "x = " + mCube.getAccX() + ", y = " + mCube.getAccY() + ",z = " + mCube.getAccZ());
         //gl.glTranslatef(-mCube.getAccX(), -mCube.getAccY(), -mCube.getAccZ());
         mCube.draw(gl);
     }

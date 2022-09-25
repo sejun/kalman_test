@@ -2,6 +2,11 @@ package com.sec.kalman_test;
 
 import static android.content.Context.SENSOR_SERVICE;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.atan;
+import static java.lang.Math.atan2;
+import static java.lang.Math.sqrt;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.Sensor;
@@ -9,9 +14,11 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import android.util.Log;
 import android.widget.TextView;
 
 import javax.microedition.khronos.opengles.GL10;
+import com.sec.kalman_test.Kalman;
 
 public class Cube extends ShapeBase implements SensorEventListener  {
 
@@ -19,6 +26,7 @@ public class Cube extends ShapeBase implements SensorEventListener  {
     private float accY;
     private float accZ;
     private Context mContext;
+
 
     private TextView xText, yText, zText;
     private Sensor mySensor, magnetoMeter, gyroScope;
@@ -31,6 +39,18 @@ public class Cube extends ShapeBase implements SensorEventListener  {
     private float[] rawMagFilteredData = new float[3];
     private float[] P_xyz_mag = new float[3]; // for Kalman filter
     private float[] calibratedMagData = new float[3];
+
+
+    private Kalman mKalmanX;
+    private Kalman mKalmanY;
+    private float gyroXangle;
+    private float gyroYangle;
+    private float compAngleX;
+    private float compAngleY;
+    private float kalAngleX;
+    private float kalAngleY;
+    private long timer;
+    private static final float RAD_TO_DEG = (float) (180.0 / Math.PI);
 
 
     //private SensorManager sensorManager;
@@ -51,22 +71,18 @@ public class Cube extends ShapeBase implements SensorEventListener  {
     public float getAccX() {
         return accX;
     }
-
     public float getAccY() {
         return accY;
     }
-
     public float getAccZ() {
         return accZ;
     }
     public void setAccX(float x) {
         accX = x;
     }
-
     public void setAccY(float y) {
         accY = y;
     }
-
     public void setAccZ(float z) {
         accY = z;
     }
@@ -140,6 +156,23 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         setIndices(index);
         setVertices(vertex);
         setColors(color);
+
+        // Set kalman and gyro starting angle
+        accX = 0;
+        accY = 0;
+        accZ = 0;
+
+        float roll = (float) (atan2(accY, accZ) * RAD_TO_DEG);
+        float pitch = (float) (atan(-accX/ sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG);
+
+        mKalmanX.setAngle(roll);
+        mKalmanY.setAngle(pitch);
+        gyroXangle = roll;
+        gyroYangle = pitch;
+        compAngleX = roll;
+        compAngleY = pitch;
+
+        timer = System.currentTimeMillis();
     }
 
 
@@ -185,12 +218,53 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         rawData[1] = linear_acc_y;
         rawData[2] = linear_acc_z;
         float[] accData = new float[3];
-///filtered accelerometer data using kalman filter
+        ///filtered accelerometer data using kalman filter
+/*
         kalmanFilter(rawData, accData, P_xyz_mag, 0.2f, 1f);
 
         setAccX(accData[0]);
         setAccY(accData[1]);
         setAccZ(accData[2]);
+*/
+        Log.i("kalman", "aX = " + linear_acc_x + ", gX = " + gyro_x);
+
+        float dt = (System.currentTimeMillis() - timer) / 1000000;
+        timer = System.currentTimeMillis();
+
+        float roll  = (float) (atan2(accY, accZ) * RAD_TO_DEG);
+        float pitch = (float) (atan(-accX / sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG);
+
+        float gyroXrate = (float) (gyro_x / 131.0);
+        float gyroYrate = (float) (gyro_y / 131.0);
+
+        if ((roll < -90 && kalAngleX > 90) || (roll > 90 && kalAngleX < -90)) {
+            mKalmanX.setAngle(roll);
+            compAngleX = roll;
+            kalAngleX = roll;
+            gyroXangle = roll;
+        } else {
+            kalAngleX = mKalmanX.getAngle(roll, gyroXrate, dt);
+        }
+
+        if (abs(kalAngleX) > 90)
+            gyroYrate = -gyroYrate;
+        kalAngleY = mKalmanY.getAngle(pitch, gyroYrate, dt);
+
+        gyroXangle += gyroXrate * dt;
+        gyroYrate += gyroYrate * dt;
+
+        compAngleX = (float) (0.93 * (compAngleX + gyroXrate * dt) + 0.07 * roll);
+        compAngleY = (float) (0.93 * (compAngleY + gyroYrate * dt) + 0.07 * pitch);
+
+        // Reset the gyro angle when it has drifted too much
+        if (gyroXangle < -180 || gyroXangle > 180)
+            gyroXangle = kalAngleX;
+        if (gyroYangle < -180 || gyroYangle > 180)
+            gyroYangle = kalAngleY;
+
+        setAccX(compAngleX);
+        setAccY(compAngleY);
+        //setAccZ(accData[2]);
 
         /*   if(isOrientationUp) {
             accData[0] = (float) ((accData[2])/(sqrt(pow(accData[0],2)+pow(accData[1],2)+pow(accData[2],2))));
