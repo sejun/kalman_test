@@ -116,6 +116,8 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         SM.registerListener(this,gyroScope,SensorManager.SENSOR_DELAY_NORMAL);
         SM.registerListener(this,head,SensorManager.SENSOR_DELAY_NORMAL);
 
+        mKalmanX = new Kalman();
+        mKalmanY = new Kalman();
 
         width  /= 2;
         height /= 2;
@@ -213,6 +215,9 @@ public class Cube extends ShapeBase implements SensorEventListener  {
             gyro_z = event.values[2];
         }
 
+        Log.i("kalman", "aX = " + linear_acc_x + ", aY = " + linear_acc_y);
+        Log.i("kalman", "gX = " + gyro_x + ", gY = " + gyro_y);
+
         float rawData[] = new float[3];
         rawData[0] = linear_acc_x;
         rawData[1] = linear_acc_y;
@@ -226,13 +231,13 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         setAccY(accData[1]);
         setAccZ(accData[2]);
 */
-        Log.i("kalman", "aX = " + linear_acc_x + ", gX = " + gyro_x);
+
 
         float dt = (System.currentTimeMillis() - timer) / 1000000;
         timer = System.currentTimeMillis();
 
-        float roll  = (float) (atan2(accY, accZ) * RAD_TO_DEG);
-        float pitch = (float) (atan(-accX / sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG);
+        float roll  = (float) (atan2(linear_acc_y, linear_acc_z) * RAD_TO_DEG);
+        float pitch = (float) (atan(-linear_acc_x / sqrt(linear_acc_y * linear_acc_x + linear_acc_z * linear_acc_z)) * RAD_TO_DEG);
 
         float gyroXrate = (float) (gyro_x / 131.0);
         float gyroYrate = (float) (gyro_y / 131.0);
@@ -261,6 +266,9 @@ public class Cube extends ShapeBase implements SensorEventListener  {
             gyroXangle = kalAngleX;
         if (gyroYangle < -180 || gyroYangle > 180)
             gyroYangle = kalAngleY;
+
+        Log.i("kalman", "cX = " + compAngleX + ", cY = " + compAngleY);
+        Log.i("kalman", "kX = " + kalAngleX + ", kY = " + kalAngleY);
 
         setAccX(compAngleX);
         setAccY(compAngleY);
