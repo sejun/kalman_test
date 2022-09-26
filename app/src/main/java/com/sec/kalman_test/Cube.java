@@ -235,8 +235,12 @@ public class Cube extends ShapeBase implements SensorEventListener  {
 */
 
 
-        long dt = (System.currentTimeMillis() - timer) / 1000;
+        long dt = (System.currentTimeMillis() - timer);
         timer = System.currentTimeMillis();
+
+        //kalAngleX = mKalmanX.getAngle(linear_acc_x, gyro_z, dt);
+        //kalAngleY = mKalmanY.getAngle(linear_acc_y, gyro_z, dt);
+
 
         //float roll  = (float) (atan2(linear_acc_y, linear_acc_z) * RAD_TO_DEG);
         //float pitch = (float) (atan(-linear_acc_x / sqrt(linear_acc_y * linear_acc_x + linear_acc_z * linear_acc_z)) * RAD_TO_DEG);
@@ -275,10 +279,13 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         //Log.i("kalman", "kX = " + kalAngleX + ", kY = " + kalAngleY);
         Log.i("kalman", "roll = " + roll + ", pitch = " + pitch);
 
-        setAccX(compAngleX);
-        setAccY(compAngleY);
+        setAccX(kalAngleX);
+        setAccY(kalAngleY);
         //setAccZ(accData[2]);
-        Log.i("kalman", "x = " +  compAngleX + ", y = " + compAngleY, "dt = " + dt);
+        Log.i("kalman", "x = " +  kalAngleX + ", y = " + kalAngleY + " dt = " + dt);
+
+
+
 
         /*   if(isOrientationUp) {
             accData[0] = (float) ((accData[2])/(sqrt(pow(accData[0],2)+pow(accData[1],2)+pow(accData[2],2))));
