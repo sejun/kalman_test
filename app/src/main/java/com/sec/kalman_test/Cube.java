@@ -164,8 +164,10 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         accY = 0;
         accZ = 0;
 
-        float roll = (float) (atan2(accY, accZ) * RAD_TO_DEG);
-        float pitch = (float) (atan(-accX/ sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG);
+        //float roll = (float) (atan2(accY, accZ) * RAD_TO_DEG);
+        //float pitch = (float) (atan(-accX/ sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG);
+        float roll = (float) (atan(linear_acc_y/ sqrt(linear_acc_x * linear_acc_x + linear_acc_z * linear_acc_z)) * RAD_TO_DEG);
+        float pitch = (float) (atan2(-linear_acc_x, linear_acc_z) * RAD_TO_DEG);
 
         mKalmanX.setAngle(roll);
         mKalmanY.setAngle(pitch);
@@ -233,27 +235,29 @@ public class Cube extends ShapeBase implements SensorEventListener  {
 */
 
 
-        float dt = (System.currentTimeMillis() - timer) / 1000000;
+        long dt = (System.currentTimeMillis() - timer) / 1000;
         timer = System.currentTimeMillis();
 
-        float roll  = (float) (atan2(linear_acc_y, linear_acc_z) * RAD_TO_DEG);
-        float pitch = (float) (atan(-linear_acc_x / sqrt(linear_acc_y * linear_acc_x + linear_acc_z * linear_acc_z)) * RAD_TO_DEG);
+        //float roll  = (float) (atan2(linear_acc_y, linear_acc_z) * RAD_TO_DEG);
+        //float pitch = (float) (atan(-linear_acc_x / sqrt(linear_acc_y * linear_acc_x + linear_acc_z * linear_acc_z)) * RAD_TO_DEG);
+        float roll = (float) (atan(linear_acc_y/ sqrt(linear_acc_x * linear_acc_x + linear_acc_z * linear_acc_z)) * RAD_TO_DEG);
+        float pitch = (float) (atan2(-linear_acc_x, linear_acc_z) * RAD_TO_DEG);
 
         float gyroXrate = (float) (gyro_x / 131.0);
         float gyroYrate = (float) (gyro_y / 131.0);
 
-        if ((roll < -90 && kalAngleX > 90) || (roll > 90 && kalAngleX < -90)) {
-            mKalmanX.setAngle(roll);
-            compAngleX = roll;
-            kalAngleX = roll;
-            gyroXangle = roll;
+        if ((pitch < -90 && kalAngleY > 90) || (pitch > 90 && kalAngleY < -90)) {
+            mKalmanY.setAngle(pitch);
+            compAngleY = pitch;
+            kalAngleY = pitch;
+            gyroYangle = pitch;
         } else {
-            kalAngleX = mKalmanX.getAngle(roll, gyroXrate, dt);
+            kalAngleY = mKalmanY.getAngle(pitch, gyroYrate, dt);
         }
 
-        if (abs(kalAngleX) > 90)
-            gyroYrate = -gyroYrate;
-        kalAngleY = mKalmanY.getAngle(pitch, gyroYrate, dt);
+        if (abs(kalAngleY) > 90)
+            gyroXrate = -gyroXrate;
+        kalAngleX = mKalmanY.getAngle(roll, gyroXrate, dt);
 
         gyroXangle += gyroXrate * dt;
         gyroYrate += gyroYrate * dt;
@@ -267,12 +271,14 @@ public class Cube extends ShapeBase implements SensorEventListener  {
         if (gyroYangle < -180 || gyroYangle > 180)
             gyroYangle = kalAngleY;
 
-        Log.i("kalman", "cX = " + compAngleX + ", cY = " + compAngleY);
-        Log.i("kalman", "kX = " + kalAngleX + ", kY = " + kalAngleY);
+        //Log.i("kalman", "cX = " + compAngleX + ", cY = " + compAngleY);
+        //Log.i("kalman", "kX = " + kalAngleX + ", kY = " + kalAngleY);
+        Log.i("kalman", "roll = " + roll + ", pitch = " + pitch);
 
         setAccX(compAngleX);
         setAccY(compAngleY);
         //setAccZ(accData[2]);
+        Log.i("kalman", "x = " +  compAngleX + ", y = " + compAngleY, "dt = " + dt);
 
         /*   if(isOrientationUp) {
             accData[0] = (float) ((accData[2])/(sqrt(pow(accData[0],2)+pow(accData[1],2)+pow(accData[2],2))));
